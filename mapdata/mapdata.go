@@ -11,18 +11,14 @@ import (
 var f embed.FS
 
 type MapData struct {
-	Colors   []Color   `json:"p"`
-	Textures []Texture `json:"t"`
-	Segment  []Segment `json:"s"`
-	Floor    int       `json:"f"`
-}
-
-func NewMapData() *MapData {
-	return &MapData{}
+	Colors       []ColorHSL `json:"p"`
+	Textures     []Texture  `json:"t"`
+	Segments     []Segment  `json:"s"`
+	FloorTexture int        `json:"f"`
 }
 
 func Load() *MapData {
-	m := NewMapData()
+	m := &MapData{}
 	file, _ := f.Open("map.json")
 	defer file.Close()
 	byteValue, _ := io.ReadAll(file)

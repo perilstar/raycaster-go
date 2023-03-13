@@ -3,81 +3,84 @@ package vector
 import "math"
 
 type Vector struct {
-	x float64
-	y float64
+	X float64
+	Y float64
 }
 
 func NewVector(x float64, y float64) *Vector {
-	return &Vector{x, y}
+	return &Vector{
+		X: x,
+		Y: y,
+	}
 }
 
-func (v Vector) copy() *Vector {
-	return NewVector(v.x, v.y)
+func (v Vector) Copy() *Vector {
+	return NewVector(v.X, v.Y)
 }
 
-func (v Vector) add(other *Vector) *Vector {
-	v.x += other.x
-	v.y += other.y
+func (v Vector) Add(other *Vector) *Vector {
+	v.X += other.X
+	v.Y += other.Y
 	return &v
 }
 
-func (v Vector) sub(other *Vector) *Vector {
-	v.x -= other.x
-	v.y -= other.y
+func (v Vector) Sub(other *Vector) *Vector {
+	v.X -= other.X
+	v.Y -= other.Y
 	return &v
 }
 
-func (v Vector) mul(scalar float64) *Vector {
-	v.x *= scalar
-	v.y *= scalar
+func (v Vector) Mul(scalar float64) *Vector {
+	v.X *= scalar
+	v.Y *= scalar
 	return &v
 }
 
-func (v Vector) div(scalar float64) *Vector {
-	v.x /= scalar
-	v.y /= scalar
+func (v Vector) Div(scalar float64) *Vector {
+	v.X /= scalar
+	v.Y /= scalar
 	return &v
 }
 
-func (v Vector) dot(o *Vector) float64 {
-	return v.x*o.x + v.y*o.y
+func (v Vector) Dot(o *Vector) float64 {
+	return v.X*o.X + v.Y*o.Y
 }
 
-func (v Vector) mag() float64 {
-	return math.Sqrt(v.x*v.x + v.y*v.y)
+func (v Vector) Mag() float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
-func (v Vector) normalize() *Vector {
-	mag := v.mag()
+func (v Vector) Normalize() *Vector {
+	mag := v.Mag()
 
 	if mag == 0 {
 		return &v
 	}
 
-	return v.div(mag)
+	return v.Div(mag)
 }
 
-func (v Vector) heading() float64 {
-	angle := math.Atan2(v.y, v.x)
+func (v Vector) Heading() float64 {
+	angle := math.Atan2(v.Y, v.X)
 	if angle < 0 {
 		angle += 2 * math.Pi
 	}
 	return angle
 }
 
-func (v Vector) setMag(length float64) *Vector {
-	return v.normalize().mul(length)
+func (v Vector) SetMag(length float64) *Vector {
+	return v.Normalize().Mul(length)
 }
 
-func (v Vector) setHeading(angle float64) *Vector {
-	mag := v.mag()
-	v.x = math.Cos(angle)
-	v.y = math.Sin(angle)
-	return v.normalize().mul(mag)
+func (v Vector) SetHeading(angle float64) *Vector {
+	mag := v.Mag()
+	v.X = math.Cos(angle)
+	v.Y = math.Sin(angle)
+	return v.Normalize().Mul(mag)
 }
 
-func (v Vector) abs() *Vector {
-	v.x = math.Abs(v.x)
-	v.y = math.Abs(v.y)
+func (v Vector) Abs() *Vector {
+	v.X = math.Abs(v.X)
+	v.Y = math.Abs(v.Y)
 	return &v
 }

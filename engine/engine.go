@@ -7,7 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-gl/gl/v2.1/gl"
+	"cinderwolf.net/raycaster/mapdata"
+	"cinderwolf.net/raycaster/vector"
+	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
@@ -22,30 +24,68 @@ type Engine struct {
 	TextureStorage *TextureStorage
 	Ctx            *context.Context
 	Cancel         *context.CancelFunc
+	Shader1        uint32
+	Shader2        uint32
+	Player         *Player
+	MapData        *mapdata.MapData
 }
 
 var (
-	width  = 379
-	height = 377
+	width     int = 379
+	height    int = 377
+	texWidth  uint32
+	texHeight uint32
 )
 
 func NewEngine() *Engine {
 	return &Engine{Frames: 0}
 }
 
+func updateTexSize() {
+	texWidth = uint32(width)
+	texHeight = uint32(height)
+
+	texWidth--
+	texWidth |= texWidth >> 1
+	texWidth |= texWidth >> 2
+	texWidth |= texWidth >> 4
+	texWidth |= texWidth >> 8
+	texWidth |= texWidth >> 16
+	texWidth++
+
+	texHeight--
+	texHeight |= texHeight >> 1
+	texHeight |= texHeight >> 2
+	texHeight |= texHeight >> 4
+	texHeight |= texHeight >> 8
+	texHeight |= texHeight >> 16
+	texHeight++
+}
+
 func (e *Engine) Start() {
+	e.Player = &Player{
+		Position: *vector.NewVector(3, 3),
+		Heading:  *vector.NewVector(MOVEMENT_SPEED, 0).SetHeading(0.0174529252 * 30),
+	}
+
+	e.MapData = mapdata.Load()
+
+	updateTexSize()
+	fmt.Printf("texWidth: %v\n", texWidth)
+	fmt.Printf("texHeight: %v\n", texHeight)
+
 	if err := glfw.Init(); err != nil {
 		log.Fatalf("failed to initialize glfw: %v", err)
 	}
 	defer glfw.Terminate()
 
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 6)
 
 	glfw.WindowHint(glfw.Focused, glfw.True)
 	glfw.WindowHint(glfw.Resizable, glfw.True)
 
-	window, err := glfw.CreateWindow(width, height, "Test", nil, nil)
+	window, err := glfw.CreateWindow(int(width), int(height), "Test", nil, nil)
 
 	if err != nil {
 		log.Fatalf("failed to create window: %v", err)
@@ -77,12 +117,25 @@ func (e *Engine) Start() {
 	window.SetFramebufferSizeCallback(func(window *glfw.Window, newWidth int, newHeight int) {
 		width = newWidth
 		height = newHeight
+		updateTexSize()
 
-		gl.Viewport(0, 0, int32(width), int32(height))
+		gl.Viewport(0, 0, int32(texWidth), int32(texHeight))
 
-		newTextureSlice := make([]uint8, width*height*3)
+		newTextureSlice := make([]uint8, texWidth*texHeight*3)
 
 		e.TextureSlice = newTextureSlice
+
+		gl.TexImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGB,
+			int32(texWidth),
+			int32(texHeight),
+			0,
+			gl.RGB,
+			gl.UNSIGNED_BYTE,
+			nil,
+		)
 	})
 	e.DoSetup(window)
 

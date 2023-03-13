@@ -1,23 +1,23 @@
 package engine
 
 import (
-	"github.com/go-gl/gl/v2.1/gl"
+	"log"
+
+	"cinderwolf.net/raycaster/shaders"
+	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
 func (e *Engine) DoSetup(window *glfw.Window) {
 	width, height = window.GetFramebufferSize()
-	gl.Viewport(0, 0, int32(width), int32(height))
-	gl.MatrixMode(gl.PROJECTION)
-	gl.LoadIdentity()
-	gl.Ortho(0, float64(width), 0, float64(height), 0, 0)
+	gl.Viewport(0, 0, int32(texWidth), int32(texHeight))
 
 	var textureStorage TextureStorage = TextureStorage{}
 	gl.GenTextures(1, &textureStorage.Texture)
 	gl.BindTexture(gl.TEXTURE_2D, textureStorage.Texture)
 	e.TextureStorage = &textureStorage
 
-	e.TextureSlice = make([]uint8, width*height*3)
+	e.TextureSlice = make([]uint8, texWidth*texHeight*3)
 
 	gl.Enable(gl.TEXTURE_2D)
 
@@ -26,19 +26,26 @@ func (e *Engine) DoSetup(window *glfw.Window) {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
+	updateTexSize()
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
 		gl.RGB,
-		int32(width),
-		int32(height),
+		int32(texWidth),
+		int32(texHeight),
 		0,
 		gl.RGB,
 		gl.UNSIGNED_BYTE,
 		nil,
 	)
 
-	gl.GenerateMipmap(gl.TEXTURE_2D)
+	vert1, frag1 := shaders.LoadPass1()
+	shader1, err := CreateProgram(vert1, frag1)
+	if err != nil {
+		log.Fatalf("shader1 fail: %v\n", err)
+	}
+
+	e.Shader1 = shader1
 }
 
 func (e *Engine) DoCleanup(window *glfw.Window) {
@@ -47,23 +54,20 @@ func (e *Engine) DoCleanup(window *glfw.Window) {
 
 func (e *Engine) DrawScene() {
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
-	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	e.DoGeneratePixels()
-
 	gl.TexSubImage2D(
 		gl.TEXTURE_2D,
 		0,
 		0,
 		0,
-		int32(width),
-		int32(height),
+		int32(texWidth),
+		int32(texHeight),
 		gl.RGB,
 		gl.UNSIGNED_BYTE,
 		gl.Ptr(e.TextureSlice),
 	)
-
-	gl.GenerateMipmap(gl.TEXTURE_2D)
 
 	vertices := []float32{
 		-1, -1, 0,
@@ -95,8 +99,6 @@ func (e *Engine) DrawScene() {
 	gl.GenBuffers(1, &ibo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo)
+	gl.UseProgram(e.Shader1)
 	gl.DrawElementsWithOffset(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, 0)
 }
