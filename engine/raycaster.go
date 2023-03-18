@@ -32,8 +32,8 @@ func getIdx(x int, y int) int {
 	if x < 0 {
 		x = 0
 	}
-	if x > int(texWidth) {
-		x = int(texWidth) - 1
+	if x > width {
+		x = width - 1
 	}
 
 	if y < 0 {
@@ -48,7 +48,7 @@ func getIdx(x int, y int) int {
 
 func (e *Engine) DoGeneratePixels() {
 	var wg sync.WaitGroup
-	cpus := width / 6
+	cpus := width / 20
 
 	for i := 0; i < cpus; i++ {
 		wg.Add(1)
@@ -82,9 +82,6 @@ func (e *Engine) DoGeneratePixels() {
 				if idx >= int(texWidth*texHeight*3) {
 					return
 				}
-				// e.TextureSlice[idx+0] = uint8(float64(x) / float64(width) * 255)
-				// e.TextureSlice[idx+1] = uint8(float64(y) / float64(height) * 255)
-				// e.TextureSlice[idx+2] = uint8((math.Sin(float64(e.Frames)*0.03) + 1) * 0.5 * 255)
 				e.drawCol(x, floorRay)
 			}
 		}(start, end)
@@ -189,14 +186,14 @@ func (e Engine) drawCol(col int, floorRay *Ray) {
 }
 
 func (e Engine) renderLine(col int, intersectionData *IntersectionData) {
-	halfHeight := float64(height) / intersectionData.D / 2
+	colHeight := float64(height) / intersectionData.D
 	texture := e.MapData.Textures[*intersectionData.T]
 	texCol := texture[int(intersectionData.X*10)%len(texture)]
 
-	texPixHeight := float64(width) / intersectionData.D / 20
+	texPixHeight := colHeight / 10
 	for k := 0; k < 20; k += 1 {
 		c := e.MapData.Colors[texCol[k%20]]
-		yOffset := height/2 - int(halfHeight)
+		yOffset := height/2 - int(colHeight)
 		for ty := 0; float64(ty) < texPixHeight; ty++ {
 			idx := getIdx(col, ty+yOffset+int(texPixHeight*float64(k)))
 			e.TextureSlice[idx+0] = c.R(0)
@@ -207,11 +204,10 @@ func (e Engine) renderLine(col int, intersectionData *IntersectionData) {
 }
 
 func (e Engine) drawFloorForCol(col int, dist float64, ray *Ray) {
-	halfHeight := float64(height) / dist / 2
-	minH := halfHeight
+	colHeight := float64(height) / dist / 2
 
 	texture := e.MapData.Textures[e.MapData.FloorTexture]
-	for y := 0; float64(y) < float64(height)/2-minH; y++ {
+	for y := 0; y < height/2+int(colHeight); y++ {
 
 		p := float64(y) - float64(height)/2
 		posZ := float64(-height)
@@ -224,8 +220,8 @@ func (e Engine) drawFloorForCol(col int, dist float64, ray *Ray) {
 		floorY := e.Player.Position.Y + rowDistance*ray.Y1
 		floorX += floorStepX * float64(col)
 		floorY += floorStepY * float64(col)
-		tx := ((uint8(10*floorX) % 20) + 20) % 20
-		ty := ((uint8(10*floorY) % 20) + 20) % 20
+		tx := (uint8(10*floorX) % 20)
+		ty := (uint8(10*floorY) % 20)
 
 		t := texture[ty][tx]
 		c := e.MapData.Colors[t]

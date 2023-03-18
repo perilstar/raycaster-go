@@ -35,8 +35,8 @@ const (
 )
 
 var (
-	width     int = 379
-	height    int = 377
+	width     int = 1200
+	height    int = 800
 	texWidth  uint32
 	texHeight uint32
 )
