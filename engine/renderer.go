@@ -53,7 +53,7 @@ func (e *Engine) DoCleanup(window *glfw.Window) {
 }
 
 func (e *Engine) DrawScene() {
-	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+	gl.ClearColor(1.0, 1.0, 0.0, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	e.DoGeneratePixels()

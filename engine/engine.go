@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"runtime"
@@ -22,13 +21,18 @@ type Engine struct {
 	Frames         int
 	Window         glfw.Window
 	TextureStorage *TextureStorage
-	Ctx            *context.Context
-	Cancel         *context.CancelFunc
 	Shader1        uint32
 	Shader2        uint32
 	Player         *Player
 	MapData        *mapdata.MapData
+	Keys           map[glfw.Key]bool
 }
+
+const (
+	MOVEMENT_SPEED float64 = 0.3
+	TURN_SPEED     float64 = 2.0
+	FOV            float64 = 90 * 0.0174533
+)
 
 var (
 	width     int = 379
@@ -38,7 +42,19 @@ var (
 )
 
 func NewEngine() *Engine {
-	return &Engine{Frames: 0}
+	return &Engine{
+		Frames: 0,
+		Keys: map[glfw.Key]bool{
+			glfw.KeyW: false,
+			glfw.KeyA: false,
+			glfw.KeyS: false,
+			glfw.KeyD: false,
+		},
+		Player: &Player{
+			Position: *vector.NewVector(3, 3),
+			Heading:  *vector.NewVector(MOVEMENT_SPEED, 0).SetHeading(0.0174529252 * 30),
+		},
+	}
 }
 
 func updateTexSize() {
@@ -63,16 +79,9 @@ func updateTexSize() {
 }
 
 func (e *Engine) Start() {
-	e.Player = &Player{
-		Position: *vector.NewVector(3, 3),
-		Heading:  *vector.NewVector(MOVEMENT_SPEED, 0).SetHeading(0.0174529252 * 30),
-	}
-
 	e.MapData = mapdata.Load()
 
 	updateTexSize()
-	fmt.Printf("texWidth: %v\n", texWidth)
-	fmt.Printf("texHeight: %v\n", texHeight)
 
 	if err := glfw.Init(); err != nil {
 		log.Fatalf("failed to initialize glfw: %v", err)
@@ -85,7 +94,7 @@ func (e *Engine) Start() {
 	glfw.WindowHint(glfw.Focused, glfw.True)
 	glfw.WindowHint(glfw.Resizable, glfw.True)
 
-	window, err := glfw.CreateWindow(int(width), int(height), "Test", nil, nil)
+	window, err := glfw.CreateWindow(int(width), int(height), "Cinder's Raycaster", nil, nil)
 
 	if err != nil {
 		log.Fatalf("failed to create window: %v", err)
@@ -113,6 +122,25 @@ func (e *Engine) Start() {
 	}(e)
 
 	window.SetKeyCallback(e.HandleKey)
+
+	go func() {
+		for {
+			time.Sleep(time.Second / 50)
+			if e.Keys[glfw.KeyA] {
+				e.Player.Heading.SetHeading(e.Player.Heading.Heading() + 0.01745329252*(-1*TURN_SPEED))
+			}
+			if e.Keys[glfw.KeyD] {
+				e.Player.Heading.SetHeading(e.Player.Heading.Heading() + 0.01745329252*(TURN_SPEED))
+			}
+
+			if e.Keys[glfw.KeyW] {
+				e.collideAndMove(1.0)
+			}
+			if e.Keys[glfw.KeyS] {
+				e.collideAndMove(-1.0)
+			}
+		}
+	}()
 
 	window.SetFramebufferSizeCallback(func(window *glfw.Window, newWidth int, newHeight int) {
 		width = newWidth

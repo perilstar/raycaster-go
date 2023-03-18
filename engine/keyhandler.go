@@ -5,15 +5,16 @@ import (
 )
 
 func (e *Engine) HandleKey(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action == glfw.Press {
-		switch key {
-		case glfw.KeyEscape:
+	switch key {
+	case glfw.KeyEscape:
+		if action == glfw.Press {
 			w.SetShouldClose(true)
-		case glfw.KeyW:
-			break
 		}
-	}
-	if key == glfw.KeyEscape && action == glfw.Press {
-		w.SetShouldClose(true)
+	case glfw.KeyW, glfw.KeyA, glfw.KeyS, glfw.KeyD:
+		if action == glfw.Press {
+			e.Keys[key] = true
+		} else if action == glfw.Release {
+			e.Keys[key] = false
+		}
 	}
 }

@@ -11,10 +11,10 @@ import (
 var f embed.FS
 
 type MapData struct {
-	Colors       []ColorHSL `json:"p"`
-	Textures     []Texture  `json:"t"`
-	Segments     []Segment  `json:"s"`
-	FloorTexture int        `json:"f"`
+	Colors       []ColorData `json:"p"`
+	Textures     []Texture   `json:"t"`
+	Segments     []Segment   `json:"s"`
+	FloorTexture int         `json:"f"`
 }
 
 func Load() *MapData {
